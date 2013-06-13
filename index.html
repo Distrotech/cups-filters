@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Cups-filters by Distrotech</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Cups-filters</h1>
+          <h2>s</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/Distrotech/cups-filters/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/Distrotech/cups-filters/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/Distrotech/cups-filters" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h2>
+<a name="readme---openprinting-cups-filters-v1034---2013-04-10" class="anchor" href="#readme---openprinting-cups-filters-v1034---2013-04-10"><span class="octicon octicon-link"></span></a>README - OpenPrinting CUPS Filters v1.0.34 - 2013-04-10</h2>
+
+<p>Looking for compile instructions?  Read the file "INSTALL.txt"
+instead...</p>
+
+<p>INTRODUCTION</p>
+
+<pre><code>CUPS is a standards-based, open source printing system developed
+by Apple Inc. for Mac OS® X and other UNIX®-like operating
+systems.  CUPS uses the Internet Printing Protocol ("IPP") and
+provides System V and Berkeley command-line interfaces, a web
+interface, and a C API to manage printers and print jobs.
+
+This distribution contains backends, filters, and other software
+that was once part of the core CUPS distribution but is no longer
+maintained by Apple Inc. In addition it contains additional
+filters and software developed independently of Apple, especially
+filters for the PDF-centric printing workflow introduced by
+OpenPrinting and a daemon to browse Bonjour broadcasts of remote
+CUPS printers and makes these printers available locally.
+
+From CUPS 1.6.0 on, this package is required for using printer
+drivers with CUPS under Linux. With CUPS 1.5.x and earlier this
+package can be used optionally to switch over to PDF-based
+printing. In that case some filters are provided by both CUPS and
+this package. Then the filters of this package should be used.
+
+For compiling and using this package CUPS, Poppler, libjpeg,
+libpng, libtiff, libijs, freetype, fontconfig, liblcms (liblcms2
+recommended), libavahi-common, and libavahi-client are needed. It
+is highly recommended, especially if non-PostScript printers are
+used, to have Ghostscript, foomatic-filters, and foomatic-db
+installed.
+
+CUPS, this package, and Ghostscript contain some rudimentary printer
+drivers, see http://www.openprinting.org/drivers/ for a more
+comprehensive set of printer drivers for Linux.
+
+See
+
+http://www.linuxfoundation.org/collaborate/workgroups/openprinting/pdf_as_standard_print_job_format
+
+for information about the PDF-based printing workflow.
+
+Report bugs to
+
+https://bugs.linuxfoundation.org/
+
+Choose "OpenPrinting" as the product and "cups-filters" as the component.
+
+See the "LICENSE.txt" files for legal information.
+</code></pre>
+
+<p>IMAGE PRINTING DEFAULT CHANGED TO "SCALE TO FIT"</p>
+
+<pre><code>Compared to the PostScript-based original CUPS filters there is a
+change of deafults: The imagetopdf and imagetoraster filters print
+in "scale-to-fit" mode (image is scaled to fill one page but
+nothing of the image being cut off) by default.
+
+This is done to support photo printing via AirPrint. The photo
+apps on Apple's iOS devices send print jobs as JPEG images and do
+not allow to set any options like "scaling" or the page size. With
+"scale-to-fit" mode set by default, the iOS photos come out on one
+page, as expected.
+
+To get back to the old behavior, supply one of the options
+"nofitplot" "filplot=Off", "nofit-to-page", or "fit-to-page=Off".
+</code></pre>
+
+<p>POSTSCRIPT PRINTING RENDERER AND RESOLUTION SELECTION</p>
+
+<pre><code>If you use CUPS with this package and a PostScript printer then
+the included pdftops filter converts the print job data which is
+in PDF format into PostScript. By default, the PostScript is
+generated with Ghostscript's "ps2write" output device, which
+generates a DSC-conforming PostScript with compressed embedded
+fonts and compressed page content. This is resource-saving and
+leads to fast wire transfer of print jobs to the printer.
+
+Unfortunately, Ghostscript's PostScript output is not compatible
+with some printers due to interpreter bugs in the printer and in
+addition, processing (by Ghostscript or by the printer's
+interpreter) can get very slow with high printing resolutions when
+parts of the incoming PDF file are converted to bitmaps if they
+contain graphical structures which are not supported by
+PostScript. The bitmap problem especially occurs on input files
+with transparency, especially also the ones produced by Cairo
+(evince and many other GNOME/GTK applications) which unnecessarily
+introduces transparency even if the input PDF has no transparency.
+
+Therefore there are two possibilities to configure pdftops at
+runtime:
+
+1. Selection of the renderer: Ghostscript, Poppler, or Adobe Reader
+
+Ghostscript has better color management and is generally optimized
+more for printing. Poppler produces a PostScript which is
+compatible with more buggy built-in PostScript interpreters of
+printers and it leads to a somewhat quicker workflow when
+graphical structures of the input PDF has to be turned into
+bitmaps. Adobe Reader is the PDF renderer from Adobe, the ones
+who created PDF and PostScript.
+
+The selection is done by the "pdftops-renderer" option, setting it
+to "gs", "pdftops", or "acroread":
+
+Per-job:           lpr -o pdftops-renderer=pdftops ...
+Per-queue default: lpadmin -p printer -o pdftops-renderer-default=gs
+Remove default:    lpadmin -p printer -R pdftops-renderer-default
+
+By default, pdftops uses Ghostscript if this does not get changed
+at compile time, for example by the Linux distribution vendor.
+
+2. Limitation of the image rendering resolution
+
+If graphical structures of the incoming PDF file have to be
+converted to bitmaps due to limitations of PostScript, the
+conversion of the file by pdftops or the rendering by the printer
+can get too slow if the bitmap resolution is too high or the
+printout quality can degrade if the bitmap resolution is too low.
+
+By default, pdftops tries to find out the actual printing
+resolution and sets the resolution for bitmap generation to the
+same value. If it cannot find the printing resolution, it uses 300
+dpi. It never goes higher than a limit of 1440 dpi. Note that this
+default limit can get changed at compile time, for example by the
+Linux distribution vendor.
+
+The resolution limit for bitmaps can be changed to a lower or
+higher value, or be set to unlimited. This is done by the option
+"pdftops-max-image-resolution", setting it to the desired value
+(in dpi) or to zero for unlimited. It can be used per-job or as
+per-queue default as the "pdftops-renderer" option described
+above.
+
+The "pdftops-max-image-resolution" option is ignored when Adobe
+Reader is selected as PDF renderer.
+</code></pre>
+
+<p>POSTSCRIPT PRINTING DEBUG MODE</p>
+
+<pre><code>Sometimes a PostScript printer's interpreter errors, crashes, or
+somehow else misbehaves on Ghostscript's output. To find
+workarounds (currently we have already workarounds for Brother and
+Kyocera) it is much easier to work with uncompressed PostScript.
+To get uncompressed PostScript as output, send a job with the
+"psdebug" option, with commands like the following:
+
+  lpr -P &lt;printer&gt; -o psdebug &lt;file&gt;
+  lp -d &lt;printer&gt; -o psdebug &lt;file&gt;
+
+If you want to send your job out of a desktop application, run
+
+  lpoptions -p &lt;printer&gt; -o psdebug
+
+to make "psdebug" a personal default setting for you.
+
+To extract the PostScript output for a developer to analyse it,
+clone your print queue to a one which prints into a file:
+
+  cupsctl FileDevice=yes
+  lpadmin -p test -E -v file:/tmp/printout \
+  -P /etc/cups/ppd/&lt;name of original queue&gt;.ppd
+
+and print into this queue as described above. The PostScript
+output is in /tmp/printout after the job has completed.
+
+This option does not change anything if Poppler's pdftops is used
+as renderer.
+</code></pre>
+
+<p>HELPER DAEMON FOR BROWSING REMOTE CUPS PRINTERS</p>
+
+<pre><code>From version 1.6.0 on in CUPS the CUPS broadcasting/browsing
+facility was dropped, in favour of Bonjour-based broadcasting of
+shared printers. This is done as Bonjour broadcasting of shared
+printers is a standard, established by the PWG (Printing Working
+Group, http://www.pwg.org/), and most other network services
+(shared file systems, shared media files/streams, remote desktop
+services, ...) are also broadcasted via Bonjour.
+
+Problem is that CUPS only broadcasts its shared printers but does
+not browse broadcasts of other CUPS servers to make the shared
+remote printers available locally without any configuration
+efforts. This is a regression compared to the old CUPS
+broadcasting/browsing. The intention of CUPS upstream is that the
+application's print dialogs browse the Bonjour broadcasts as an
+AirPrint-capable iPhone does, but it will take its time until all
+toolkit developers add the needed functionality, and programs
+using old toolkits or no toolkits at all, or the command line stay
+uncovered.
+
+The solution is cups-browsed, a helper daemon running in parallel
+to the CUPS daemon which listens to Bonjour broadcasts of shared
+CUPS printers on remote machines in the local network via Avahi,
+and can also listen for (and send) CUPS Browsing broadcasts. For
+each reported remote printer it creates a local raw queue pointing
+to the remote printer so that the printer appears in local print
+dialogs and is also available for printing via the command
+line. As with the former CUPS broadcasting/browsing with this
+queue the driver on the server is used and the local print dialogs
+give access to all options of the server-side printer driver.
+
+Note that CUPS broadcasting/browsing is available for legacy
+support, to let the local CUPS daemon work seamlessly together
+with remote CUPS daemons of version 1.5.x and older which only
+support CUPS broadcasting/browsing. In networks with only CUPS
+1.6.x servers (or Ubuntu or Fedora/Red Hat servers with CUPS
+1.5.x) please use the native Bonjour broadcasting of your servers
+and cups-browsed, configured for Bonjour browsing only on the
+clients.
+
+Also high availability with redundant print servers is
+supported. If there is more than one server providing a shared
+print queue with the same name, cups-browsed uses the first queue
+which appeared and if this queue disappears, cups-browsed
+seamlessly switches to the queue of another server. Unfortunately,
+load-balancing (what CUPS did via implicit classes) is not
+possible with cups-browsed.
+
+For maximum security cups-browsed uses IPPS (encrypted IPP)
+whenever possible.
+
+The configuration file for cups-browsed is
+/etc/cups/cups-browsed.conf.  This file can include limited forms
+of the original CUPS BrowseRemoteProtocols, BrowseLocalProtocols,
+BrowsePoll, and BrowseAllow directives.
+
+The "make install" process installs init scripts which make the
+daemon automatically started during boot. You can also manually
+start it with (as root):
+
+/usr/sbin/cups-browsed &amp;
+
+or in debug mode with
+
+/usr/sbin/cups-browsed --debug
+
+Shut it down by sending signal 2 (SIGINT) or 15 (SIGTERM) to
+it. The queues which it has created get removed then (except a
+queue set as system default, to not loose its system default
+state).
+
+Here is some info on how cups-browsed works internally )first concept of a
+daemon which does only Bonjour browsing):
+
+- Daemon start
+  o Wait for CUPS daemon if it is not running
+  o Read out all CUPS queues created by this daemon (in former sessions)
+  o Mark them unconfirmed and set timeout 10 sec from now
+- Main loop (use avahi_simple_poll_iterate() to do queue list maintenance
+             regularly)
+  o Event: New printer shows up
+    + Queue for printer is already created by this daemon -&gt; Mark list
+      entry confirmed, if discovered printer is ipps but existing queue ipp,
+  upgrade existing queue by setting URI to ipps. Set status to
+  to-be-created and timeout to now-1 sec to make the CUPS queue be
+  updated.
+    + Queue does not yet exist -&gt; Mark as to-be-created and set
+  timeout to now-1 sec.
+  o Event: A printer disappears
+    + If we have listed a queue for it, mark the entry as disappeared, set
+      timeout to now-1 sec
+  o On any of the above events and every 2 sec
+    + Check through list of our listed queues
+      - If queue is unconfirmed and timeout has passed, mark it as
+        disappeared, set timeout to now-1 sec
+      - If queue is marked disappered and timeout has passed, check whether
+    there are still jobs in it, if yes, set timeout to 10 sec from now,
+    if no, remove the CUPS queue and the queue entry in our list. If
+    removal fails, set timeout to 10 sec.
+  - If queue is to-be-created, create it, if succeeded set to
+    confirmed, if not, set timeout to 10 sec fron now. printer-is-shared
+    must be set to false.
+- Daemon shutdown
+  o Remove all CUPS queues in our list, as long as they do not have jobs.
+
+Do not overwrite existing queues which are not created by us If
+the simple &lt;remote_printer&gt; name is already taken, try to create a
+&lt;remote_printer&gt;@&lt;server&gt; name, if this is also taken, ignore the
+remote printer. Do not retry, to avoid polling CUPS all the time.
+
+Do not remove queues which are not created by us. We do this by
+listing only our queues and remove only listed queues.
+
+Queue names: Use the name of the remote queue. If a queue with the
+same name from another server already exists, mark the new queue
+as duplicate and when a queue disappears, check whether it has
+duplicates and change the URI of the disappeared queue to the URI
+of the first duplicate, mark the queue as to-be-created with
+timeout now-1 sec (to update the URI of the CUPS queue) and mark
+the duplicate ddisappeared with timeout now-1 sec. In terms of
+high availability we replace the old load balancing of the
+implicit class by a failover solution. Alternatively (not
+implemented), if queue with same name but from other server
+appears, create new queue as &lt;original name&gt;@&lt;server name without
+.local&gt;. When queue with simple name is removed, replace the first
+of the others by one with simple name (mark old queue disappeared
+with timeout now-1 sec and create new queue with simple name).
+
+Fill description of the created CUPS queue with the Bonjour
+service name (= original description) and location with the server
+name without .local.
+
+stderr messages only in debug mode (command line options:
+"--debug" or "-d" or "-v").
+
+Queue identified as from this daemon by doing the equivalent of
+"lpadmin -p printer -o cups-browsed-default", this generates a
+"cups-browsed" attribute in printers.conf with value "true".
+</code></pre>
+
+<p>CUPS FILTERS FOR PDF AS STANDARD PRINT JOB FORMAT</p>
+
+<pre><code>Here is documentation from the former CUPS add-on tarball with the filters
+for the PDF-based printing workflow: imagetopdf, texttopdf,
+pdftopdf, pdftoraster, pdftoopvp, and pdftoijs
+
+The original filters are from http://sourceforge.jp/projects/opfc/
+
+NOTE: the texttops and imagetops filters shipping with this package
+are simple wrapper scripts for backward compatibility with third-party
+PPD files and custom configurations. There are not referred to in the
+cupsfilters.convs file and therefore not used by the default
+configuration. Direct conversion of text or images to PostScript is
+deprecated in the PDF-based printing workflow. So do not use these
+filters when creating new PPDs or custom configurations. The parameters
+for these filters are the same as for texttopdf and imagetopdf (see
+below) as the ...tops filter calls the ....topdf filter plus
+Ghostscript's pdf2ps.
+</code></pre>
+
+<p>IMAGETOPDF</p>
+
+<ol>
+<li>INTRODUCTION</li>
+</ol><p>This program is "imagetopdf". "imagetopdf" is a CUPS filter which reads
+a single image file, converts it into a PDF file and outputs it to stdout.</p>
+
+<p>This program accepts the following image file format;</p>
+
+<p>gif, png, jpeg, tiff, photocd, portable-anymap, portable-bitmap,
+  portable-graymap, portable-pixmap, sgi-rgb, sun-raster, xbitmap,
+  xpixmap, xwindowdump</p>
+
+<p>xbitmap, xpixmap and xwindowdump images are converted into png images by
+the "convert" command. Other kinds of image file format can be supported
+if the "convert" command support them.</p>
+
+<p>Output PDF file format conforms to PDF version 1.3 specification, and
+input image is converted and contained in the output PDF file as a binary
+format non-compression image.</p>
+
+<p>"imagetopdf" may outputs multiple pages if the input image exceeds page
+printable area.</p>
+
+<ol>
+<li>LICENSE</li>
+</ol><p>"imagetopdf.c" is under the CUPS license. See the "LICENSE.txt" file.
+For other files, see the copyright notice and license of each file.</p>
+
+<ol>
+<li>COMMAND LINE</li>
+</ol><p>"imagetopdf" is a CUPS filter, and the command line arguments, environment
+variables and configuration files are in accordance with the CUPS filter
+interface.</p>
+
+<p>imagetopdf  []</p>
+
+<p>"imagetopdf" ignores  and .
+ is appended into the PDF dictionary as /Title.
+ specifies the number of document copies.
+ is a CUPS option list.
+ is an input image file name.</p>
+
+<p>When omit the , "imagetopdf" reads an image file from stdin.</p>
+
+<ol>
+<li>ENVIRONMENT VARIABLES</li>
+</ol><p>This program refers the following environment variable;</p>
+
+<p>PPD:  PPD file name of the printer.</p>
+
+<ol>
+<li>COMMAND OPTIONS</li>
+</ol><p>"imagetopdf" accepts the following CUPS standard options;</p>
+
+<p>fitplot
+mirror
+PageSize
+page-left, page-right, page-bottom, page-top
+OutputOrder
+Collate
+sides
+cupsEvenDuplex
+position
+scaling
+ppi
+natural-scaling
+landscape
+orientation-requested</p>
+
+<p>See the CUPS documents for details of these options.</p>
+
+<ol>
+<li>KNOWN PROBLEMS</li>
+</ol><p>Problem:
+  PBM and SUN raster images can not be printed.
+Solution:
+  Due to the CUPS libcupsimage library's bug. Update the CUPS on your system.</p>
+
+<ol>
+<li>INFORMATION FOR DEVELOPERS</li>
+</ol><p>Following information is for developers, not for driver users.</p>
+
+<p>7.1 Options handled by a printer or "imagetopdf"</p>
+
+<p>Following options are handled by a printer or "imagetopdf".
+  Collate, Copies, Duplex, OutputOrder</p>
+
+<p>Which handles these options depends on following options and attributes.
+  Collate, Copies, Duplex, OutputOrder, cupsEvenDuplex, cupsManualCopies</p>
+
+<p>"imagetopdf" judges whether a printer can handle these options according to
+the followings option settings in a PPD file.</p>
+
+<p>Collate:
+  If Collate is defined, "imagetopdf" judges the printer supports Collate.
+Copies:
+  If cupsManualCopies is defined as False, "imagetopdf" judges the printer
+  does not support Copies feature.
+　
+Duplex:
+  If Duplex is defined, "imagetopdf" judges the printer supports Duplex.
+  If cupsEvenDuplex is True, Number of pages must be even.
+OutputOrder:
+  If OutputOrder is defined, "imagetopdf" judges the printer supports
+  OutputOrder.</p>
+
+<p>If the printer cannot handle these options, "imagetopdf" handles it.</p>
+
+<p>Following pseudo program describes how "imagetopdf" judges to handle
+these options.</p>
+
+<p>Variables</p>
+
+<p>Copies : specified Copies
+Duplex : specified Duplex 
+Collate : specified Collate
+OutputOrder : specified OutputOrder
+EvenDuplex : specified cupsEvenDuplex
+pages : number of pages
+number_up : specified number-up</p>
+
+<p>device_copies : Copies passed to the printer
+device_duplex : Duplex passed to the printer
+device_collate : Collate passed to the printer
+device_outputorder : OutputOrder passed to the printer</p>
+
+<p>soft_copies : copies by imagetopdf</p>
+
+<p>device_copies = 1;
+device_duplex = False;
+device_collate = False;
+device_outputorder = False;</p>
+
+<p>if (Copies == 1) {
+  /* Collate is not needed. */
+  Collate = False;
+}</p>
+
+<p>if (!Duplex) {
+  /* EvenDuplex is not needed */
+  EvenDuplex = False;
+}</p>
+
+<p>if (Copies &gt; 1 &amp;&amp; the printer can handle Copies) device_copies = Copies;
+if (Duplex &amp;&amp; the printer can handle Duplex) {
+       device_duplex = True;
+} else {
+   /* imagetopdf cannot handle Duplex */
+}
+if (Collate &amp;&amp; the printer can handle Collate) device_collate = True;
+if (OutputOrder == Reverse &amp;&amp; the printer can handle OutputOrder)
+             device_outputorder = True;</p>
+
+<p>if (Collate &amp;&amp; !device_collate) {
+   /* The printer cannot handle Collate.
+      So imagetopdf handle Copies */
+              device_copies = 1;
+}</p>
+
+<p>if (device_copies != Copies /* imagetopdf handle Copies <em>/ &amp;&amp; Duplex)
+    /</em> Make imagetopdf handle Collate, otherwise both paper side may have
+       same page */
+              Collate = True;
+              device_collate = False;
+}</p>
+
+<p>if (Duplex &amp;&amp; Collate &amp;&amp; !device_collate) {
+   /* Handle EvenDuplex, otherwise the last page has
+      the next copy's first page in the other side of the paper. */
+   EvenDuplex = True;
+}</p>
+
+<p>if (Duplex &amp;&amp; OutputOrder == Reverse &amp;&amp; !device_outputorder) {
+   /* Handle EvenDuplex, otherwise the first page's other side of paper
+      is empty. */
+   EvenDuplex = True;
+}</p>
+
+<p>soft_copies = device_copies &gt; 1 ? 1 : Copies;</p>
+
+<p>7.2 JCL</p>
+
+<p>When you print PDF files to a PostScript(PS) printer, you can specify
+device options in PS. In this case, you can write PS commands in a PPD file
+like as follows.</p>
+
+<p>*OpenUI *Resolution/Resolution : PickOne
+*DefaultResolution: 600
+*Resolution 300/300 dpi: "&lt;&gt;setpagedevice"
+*Resolution 600/600 dpi: "&lt;&gt;setpagedevice"
+*CloseUI: *Resolution</p>
+
+<p>However, if options cannot be described in PS file, you can write JCLs
+as follows;</p>
+
+<p>*JCLOpenUI *JCLFrameBufferSize/Frame Buffer Size: PickOne
+*DefaultJCLFrameBufferSize: Letter
+*OrderDependency: 20 JCLSetup *JCLFrameBufferSize
+*JCLFrameBufferSize Off: '<a href="https://github.com/PJL" class="user-mention">@PJL</a> SET PAGEPROTECT = OFF'
+*JCLFrameBufferSize Letter: '<a href="https://github.com/PJL" class="user-mention">@PJL</a> SET PAGEPROTECT = LTR'
+*JCLFrameBufferSize Legal: '<a href="https://github.com/PJL" class="user-mention">@PJL</a> SET PAGEPROTECT = LGL'
+*JCLCloseUI: *JCLFrameBufferSize</p>
+
+<p>Because PDF cannot specify device options in a PDF file, you have to define
+all the device options as JCLs.</p>
+
+<p>When a printer does not support PS nor PDF, you can use Ghostscript (GS).
+In this case, you can specify device options like a PS printer.
+If you want to use the same printer and same PPD file for both PDF and PS
+printing, when you print a PS file, you can specify that GS handles it,
+and when you print a PDF file, you can also specify that PDF filters handle
+it in the same PPD file. However in this case, previous methods is not
+appropriate to specify device options.</p>
+
+<p>So, "imagetopdf" handles this case as follows;
+(In following pseudo program, JCL option is an option specified with JCLOpenUI)</p>
+
+<p>if (Both JCLBegin and JCLToPSInterpreter are specified in the PPD file) {
+    output JCLs that marked JCL options.
+}</p>
+
+<p>if (pdftopdfJCLBegin attribute is specified in the PPD file) {
+    output it's value
+}</p>
+
+<p>if (Copies option is specified in the PPD file) {
+    mark Number of copies specified
+} else if (pdftopdfJCLCopies is specified in the PPD file) {
+    output JCL specified with JCLCopies
+}</p>
+
+<p>for (each marked options) {
+    if (pdftopdfJCL is specified in the PPD file) {
+    output it's value as a JCL
+    } else if (pdftopdfJCLBegin attributes is specified in the PPD file) {
+    output "=;" as a JCL
+    }
+}
+output NEWLINE</p>
+
+<p>Thus, if you want to use both PDF filters and GS by single PPD file,
+what you should do is to add the following line in the PPD file;</p>
+
+<p>*pdftopdfJCLBegin: "pdftoopvp jobInfo:"</p>
+
+<p>Note:
+  If you specify JCLBegin, you have to specify JCLToPSInterpreter as well.</p>
+
+<p>Note:
+  When you need to specify the value which is different from the choosen
+  value based on the PPD into the jobInfo, you have to specify the values
+  with the key started by "pdftopdfJCL" string.</p>
+
+<p>For example, if the page size is defined in a PPD file as following;</p>
+
+<p>*OpenUI *PageSize/Page Size: PickOne
+  *DefaultPageSize: A4
+  *PageSize A4/A4:
+  *PageSize Letter/US Letter:
+  *CloseUI: *PageSize</p>
+
+<p>if you choose the page size "Letter", the string "PageSize=Letter;" is
+  added to jobInfo. On the other hand, if the driver requires the different
+  value for the "Letter" size, for instance driver requires "PS=LT;"
+  instead of "PageSize=Letter;" as the jobInfo value, the PPD file has to
+  be defined as following;</p>
+
+<p>*OpenUI *PageSize/Page Size: PickOne
+  *DefaultPageSize: A4
+  *PageSize A4/A4:
+  *pdftopdfJCLPageSize A4/A4: "PS=A4;"
+  *PageSize Letter/US Letter:
+  *pdftopdfJCLPageSize Letter/US Letter: "PS=LT;"
+  *CloseUI: *PageSize</p>
+
+<p>7.3 Temporally files location</p>
+
+<p>"imagetopdf" creates temporally files if needed. Temporary files are created
+in the location specified by TMPDIR environment variable. Default location
+is "/tmp".</p>
+
+<p>PDFTOPDF.OLD</p>
+
+<ol>
+<li><p>DEPRECATION NOTICE
+This filter is being replaced by a new implementation that does not
+depend on poppler. Therefore it has been renamed "pdftopdf.old",
+but the references in the following sections have not been updated.</p></li>
+<li><p>INTRODUCTION</p></li>
+</ol><p>There are two executable programs, "pdftopdf" and "pdf2pdf", in this package.
+"pdftopdf" is a filter for CUPS. It reads PDF files, changes page layout
+and output a new PDF file. "pdf2pdf" is a user command version of "pdftopdf".
+This document describes about only "pdftopdf". See man/pdf2pdf.1 for "pdf2pdf".</p>
+
+<p>When a input PDF file which is given to "pdftopdf" does not include some
+required fonts, and if you set the font embedding option, "pdftopdf" embed
+fonts in the new PDF file </p>
+
+<p>"pdftopdf" finds fonts to embed by fontconfig library.
+"pdftopdf" now embed only TrueType format fonts.
+PDF Standard fonts are not embedded.</p>
+
+<p>Note: Do not embed fonts that the font licenses inhibit embedding.</p>
+
+<p>"pdftopdf" does not support functions that are not related to printing
+features, including interactive features and document interchange features.
+Many of these operators and sections are just ignored.
+Some of these may be output, but those functions are not assured.
+Encryption feature is not supported.</p>
+
+<ol>
+<li>NATIVE PDF PRINTER SUPPORT</li>
+</ol><p>pdftopdf introduces native PDF printer support to CUPS for the first
+time. PPD files must have a line</p>
+
+<p>*cupsFilter: "application/vnd.cups-pdf 0 -"</p>
+
+<p>and use the "*JCLToPDFInterpreter:" keyword, for example:</p>
+
+<p>*JCLBegin:           "%-12345X@PJL JOB"
+*JCLToPDFInterpreter: "<a href="https://github.com/PJL" class="user-mention">@PJL</a> ENTER LANGUAGE = PDF "
+*JCLEnd:             "%-12345X@PJL EOJ %-12345X"</p>
+
+<p>They MUST NOT accept PostScript as input data format and will not work
+with stock CUPS. They will need cups-filters (which implements the PDF-
+based printing workflow) to work.</p>
+
+<p>Options must not be implemented by specifying PostScript code to
+inject.  They must be injecting JCL code ("*JCLOpenUI:
+... ... *JCLCloseUI: ...").</p>
+
+<p>A sample PPD file, HP-Color_LaserJet_CM3530_MFP-PDF.ppd is included.</p>
+
+<ol>
+<li>LICENSE</li>
+</ol><p>Almost all source files are under MIT like license. However,
+"pdftopdf" links some "poppler" libraries, and these files are under
+GNU public license.  See copyright notice of each file for details.</p>
+
+<ol>
+<li>COMMAND LINE</li>
+</ol><p>"pdftopdf" is a CUPS filter, and the command line arguments, environment
+variables and configuration files are in accordance with the CUPS filter
+interface.</p>
+
+<p>pdftopdf  []</p>
+
+<p>"pdftopdf" ignores  and .
+ is appended into the PDF dictionary as /Title.
+ specifies the number of document copies.
+ is a CUPS option list.
+ is an input PDF file name.</p>
+
+<p>When omit the , "pdftopdf" reads a PDF file from stdin,
+and save it as a temporary file.</p>
+
+<p>CUPS options defined in  are delimited by space. Boolean
+type CUPS option is defined only by the option key, and other type
+CUPS option are defined by pairs of key and value, =.</p>
+
+<ol>
+<li>COMMAND OPTIONS</li>
+</ol><p>"pdftopdf" accepts the following CUPS standard options;</p>
+
+<p>fiplot
+mirror
+PageSize
+page-left, page-right, page-bottom, page-top
+number-up
+number-up-layout
+page-border
+OutputOrder
+page-set
+page-ranges
+Collate
+sides
+cupsEvenDuplex</p>
+
+<p>See the CUPS documents for details of these options.</p>
+
+<p>Margin given by the page-left, page-right, page-bottom and page-top is
+valid when fiplot or number-up option is set.</p>
+
+<p>"pdftopdf" accepts the following original options;</p>
+
+<p>pdftopdfFontEmbedding
+  Boolean option.
+  Force "pdftopdf" to embed fonts. "pdftopdf" does not embed fonts by default.</p>
+
+<p>pdftopdfFontEmbeddingWhole
+  Boolean option.
+  Force "pdftopdf" to embed whole fonts.
+  "pdftopdf" does not embed whole fonts by default.
+  If this option is false, "pdftopdf" embed subset of the fonts.
+  This option is valid only when the pdftopdfFontEmbedding option is true.</p>
+
+<p>pdftopdfFontEmbeddingPreLoad
+  Boolean option.
+  Force "pdftopdf" to embed fonts specified as pre-loaded fonts in a PPD file.
+  "pdftopdf" does not embed pre-loaded fonts by default.
+  If this option is false, pdftopdf does not embed pre-loaded fonts.
+  This option is valid only when the pdftopdfFontEmbedding option is true.</p>
+
+<p>pdftopdfFontCompress
+  Boolean option.
+  Force "pdftopdf" to compress embed fonts.
+  "pdftopdf" does not compress embed fonts by default.
+  This option is valid only when the pdftopdfFontEmbedding option is true.</p>
+
+<p>pdftopdfContentsCompress
+  Boolean option.
+  Force "pdftopdf" to compress page contents.
+  "pdftopdf" does not compress page contents by default.</p>
+
+<p>pdftopdfJCLBegin
+  Boolean option.
+  Force "pdftopdf" to create JCL info for the following PDF filter
+  "pdftoopvp".</p>
+
+<ol>
+<li>INFORMATION FOR DEVELOPERS</li>
+</ol><p>Following information is for developers, not for driver users.</p>
+
+<p>6.1 Options handled by a printer or "pdftopdf"</p>
+
+<p>Following options are handled by a printer or "pdftopdf".
+  Collate, Copies, Duplex, OutputOrder</p>
+
+<p>Which handles these options depends on following options and attributes.
+  Collate, Copies, Duplex, OutputOrder, cupsEvenDuplex, cupsManualCopies</p>
+
+<p>"pdftopdf" judges whether a printer can handle these options according to
+the followings option settings in a PPD file.</p>
+
+<p>Collate:
+  If Collate is defined, "pdftopdf" judges the printer supports Collate.
+Copies:
+  If cupsManualCopies is defined as False, "pdftopdf" judges the printer
+  does not support Copies feature.
+Duplex:
+  If Duplex is defined, "pdftopdf" judges the printer supports Duplex.
+  If cupsEvenDuplex is True, Number of pages must be even.
+OutputOrder:
+  If OutputOrder is defined, "pdftopdf" judges the printer supports
+  OutputOrder.</p>
+
+<p>If the printer cannot handle these options, "pdftopdf" handles it.</p>
+
+<p>Following pseudo program describes how "pdftopdf" judges to handle
+these options.</p>
+
+<p>Variables</p>
+
+<p>Copies : specified Copies
+Duplex : specified Duplex 
+Collate : specified Collate
+OutputOrder : specified OutputOrder
+EvenDuplex : specified cupsEvenDuplex
+pages : number of pages
+number_up : specified number-up</p>
+
+<p>device_copies : Copies passed to the printer
+device_duplex : Duplex passed to the printer
+device_collate : Collate passed to the printer
+device_outputorder : OutputOrder passed to the printer</p>
+
+<p>soft_copies : copies by pdftopdf</p>
+
+<p>device_copies = 1;
+device_duplex = False;
+device_collate = False;
+device_outputorder = False;</p>
+
+<p>if (Copies == 1) {
+  /* Collate is not needed. */
+  Collate = False;
+}</p>
+
+<p>if (!Duplex) {
+  /* EvenDuplex is not needed */
+  EvenDuplex = False;
+}</p>
+
+<p>if (Copies &gt; 1 &amp;&amp; the printer can handle Copies) device_copies = Copies;
+if (Duplex &amp;&amp; the printer can handle Duplex) {
+       device_duplex = True;
+} else {
+   /* pdftopdf cannot handle Duplex */
+}
+if (Collate &amp;&amp; the printer can handle Collate) device_collate = True;
+if (OutputOrder == Reverse &amp;&amp; the printer can handle OutputOrder)
+             device_outputorder = True;</p>
+
+<p>if (Collate &amp;&amp; !device_collate) {
+   /* The printer cannot handle Collate.
+      So pdftopdf handle Copies */
+              device_copies = 1;
+}</p>
+
+<p>if (device_copies != Copies /* pdftopdf handle Copies <em>/ &amp;&amp; Duplex)
+    /</em> Make pdftopdf handle Collate, otherwise both paper side may have
+       same page */
+              Collate = True;
+              device_collate = False;
+}</p>
+
+<p>if (Duplex &amp;&amp; Collate &amp;&amp; !device_collate) {
+   /* Handle EvenDuplex, otherwise the last page has
+      the next copy's first page in the other side of the paper. */
+   EvenDuplex = True;
+}</p>
+
+<p>if (Duplex &amp;&amp; OutputOrder == Reverse &amp;&amp; !device_outputorder) {
+   /* Handle EvenDuplex, otherwise the first page's other side of paper
+      is empty. */
+   EvenDuplex = True;
+}</p>
+
+<p>soft_copies = device_copies &gt; 1 ? 1 : Copies;</p>
+
+<p>6.2 JCL</p>
+
+<p>When you print PDF files to a PostScript(PS) printer, you can specify
+device options in PS. In this case, you can write PS commands in a PPD file
+like as follows.</p>
+
+<p>*OpenUI *Resolution/Resolution : PickOne
+*DefaultResolution: 600
+*Resolution 300/300 dpi: "&lt;&gt;setpagedevice"
+*Resolution 600/600 dpi: "&lt;&gt;setpagedevice"
+*CloseUI: *Resolution</p>
+
+<p>However, if options cannot be described in PS file, you can write JCLs
+as follows;</p>
+
+<p>*JCLOpenUI *JCLFrameBufferSize/Frame Buffer Size: PickOne
+*DefaultJCLFrameBufferSize: Letter
+*OrderDependency: 20 JCLSetup *JCLFrameBufferSize
+*JCLFrameBufferSize Off: '<a href="https://github.com/PJL" class="user-mention">@PJL</a> SET PAGEPROTECT = OFF'
+*JCLFrameBufferSize Letter: '<a href="https://github.com/PJL" class="user-mention">@PJL</a> SET PAGEPROTECT = LTR'
+*JCLFrameBufferSize Legal: '<a href="https://github.com/PJL" class="user-mention">@PJL</a> SET PAGEPROTECT = LGL'
+*JCLCloseUI: *JCLFrameBufferSize</p>
+
+<p>For PostScript printers all these options are handled by the pdftops
+filter which is the PostScript printer driver in the PDF-based
+printing workflow.</p>
+
+<p>If you have a native PDF printer you cannot use options which inject
+PostScript code into the data stream, you have to define all options
+with JCL. Only in this case pdftopdf adds the JCL header and trailer
+to the PDF job. Native PDF PPDs with JCL options are recognized by the
+"*JCLToPDFInterpreter:" keyword, for example with the following lines:</p>
+
+<p>*JCLBegin:           "%-12345X@PJL JOB"
+*JCLToPDFInterpreter: "<a href="https://github.com/PJL" class="user-mention">@PJL</a> ENTER LANGUAGE = PDF "
+*JCLEnd:             "%-12345X@PJL EOJ %-12345X"</p>
+
+<p>To get the correct CUPS filter chain for them, they need the following
+line:</p>
+
+<p>*cupsFilter: "application/vnd.cups-pdf 0 -"</p>
+
+<p>and NO "*cupsFilter:" line which accepts PostScript input.</p>
+
+<p>A sample PPD file for a native PDF printer,
+HP-Color_LaserJet_CM3530_MFP-PDF.ppd is included.</p>
+
+<p>When a printer does not support PS nor PDF, you can use Ghostscript (GS).
+In this case, you can specify device options like a PS printer.
+If you want to use the same printer and same PPD file for both PDF and PS
+printing, when you print a PS file, you can specify that GS handles it,
+and when you print a PDF file, you can also specify that PDF filters handle
+it in the same PPD file. However in this case, previous methods is not
+appropriate to specify device options.</p>
+
+<p>So, "pdftopdf" handles this case as follows;
+(In following pseudo program, JCL option is a option specified with JCLOpenUI)</p>
+
+<p>if (Both JCLBegin and JCLToPDFInterpreter are specified in the PPD file) {
+    output JCLs that marked JCL options.
+}</p>
+
+<p>if (pdftopdfJCLBegin attribute is specified in the PPD file) {
+    output it's value
+}</p>
+
+<p>if (Copies option is specified in the PPD file) {
+    mark Number of copies specified
+} else if (pdftopdfJCLCopies is specified in the PPD file) {
+    output JCL specified with JCLCopies
+}</p>
+
+<p>for (each marked options) {
+    if (pdftopdfJCL is specified in the PPD file) {
+    output it's value as a JCL
+    } else if (pdftopdfJCLBegin attributes is specified in the PPD file) {
+    output "=;" as a JCL
+    }
+}
+output NEWLINE</p>
+
+<p>Thus, if you want to use both PDF filters and GS by single PPD file,
+what you should do is to add the following line in the PPD file;</p>
+
+<p>*pdftopdfJCLBegin: "pdftoopvp jobInfo:"</p>
+
+<p>Note:
+  If you specify JCLBegin, you have to specify JCLToPDFInterpreter as well.</p>
+
+<p>Note:
+  When you need to specify the value which is different from the choosen
+  value based on the PPD into the jobInfo, you have to specify the values
+  with the key started by "pdftopdfJCL" string.</p>
+
+<p>For example, if the page size is defined in a PPD file as following;</p>
+
+<p>*OpenUI *PageSize/Page Size: PickOne
+  *DefaultPageSize: A4
+  *PageSize A4/A4:
+  *PageSize Letter/US Letter:
+  *CloseUI: *PageSize</p>
+
+<p>if you choose the page size "Letter", the string "PageSize=Letter;" is
+  added to jobInfo. On the other hand, if the driver requires the different
+  value for the "Letter" size, for instance driver requires "PS=LT;"
+  instead of "PageSize=Letter;" as the jobInfo value, the PPD file has to
+  be defined as following;</p>
+
+<p>*OpenUI *PageSize/Page Size: PickOne
+  *DefaultPageSize: A4
+  *PageSize A4/A4:
+  *pdftopdfJCLPageSize A4/A4: "PS=A4;"
+  *PageSize Letter/US Letter:
+  *pdftopdfJCLPageSize Letter/US Letter: "PS=LT;"
+  *CloseUI: *PageSize</p>
+
+<p>6.3 Special PDF comment</p>
+
+<p>"pdftopdf" outputs the following special comments from the 4th line in the
+created PDF data.</p>
+
+<p>%%PDFTOPDFNumCopies :  ---  specified Number of Copies
+%%PDFTOPDFCollate :  ---  is true or false</p>
+
+<p>6.4 Temporally files location</p>
+
+<p>"pdftopdf" creates temporally files if needed.　Temporary files are created
+in the location specified by TMPDIR environment　variable. Default location
+is "/tmp".</p>
+
+<p>PDFTOPDF  -- new implementation</p>
+
+<p>A new implementation of the pdftopdf filter is available. 
+It depends on libqpdf to read/write pdf files.</p>
+
+<p>The aim is to replace and imitate the pstops filter in PDF-based workflows.
+A similar filter (which can serve as behavior reference) 
+is called "cgpdftopdf" in OS X (not open source).</p>
+
+<h2>
+<a name="notable-options" class="anchor" href="#notable-options"><span class="octicon octicon-link"></span></a>Notable options</h2>
+
+<p>booklet=Off/On/Shuffle-Only
+   On also tries to set DuplexTumble (two-sided-short-edge) and forces number-up=2
+ booklet-signature=(multiple of 4, or default: -1 to use "all pages")</p>
+
+<h2>
+<a name="known-issues" class="anchor" href="#known-issues"><span class="octicon octicon-link"></span></a>Known issues</h2>
+
+<ul>
+<li>Borders, esp. in the "number-up=1 fitplot=false"-case are sometimes drawn 
+at incorrect locations.</li>
+<li>more testing needs to be done</li>
+<li>documentation largely missing</li>
+</ul><p>TEXTTOPDF</p>
+
+<p>This implements a texttopdf filter, and is derived from cups' texttops.</p>
+
+<h2>
+<a name="to-configure" class="anchor" href="#to-configure"><span class="octicon octicon-link"></span></a>To configure:</h2>
+
+<ul>
+<li><p>texttopdf uses CUPS_DATADIR/charset/pdf.utf-8 for font configuration
+(when utf-8 was requested as charset). The font names given there are 
+used as fontconfig selectors; the best matching font, that is both 
+monospaced and in a supported format (TTC, TTF or OTF) will then be used.</p></li>
+<li><p>As a special exception, all fontnames that start with a '.' or '/' are
+considered filenames, and fontconfig is skipped; the name is used directly
+for loading the font file.</p></li>
+<li><p>Implementation note: TrueType Collections (.TTC) are internally handled
+by appending '/' and the index of the font inside the collection to 
+the filename (e.g. to use the second font of uming.ttc, the filename 
+uming.ttc/1 must be given to the fontembed-library).
+By appending the index-field returned from fontconfig, this is completely
+transparent to the user (but currently not widely tested).</p></li>
+<li><p>You may look at the two examples: pdf.utf-8.simple and pdf.utf-8.heavy.</p></li>
+</ul><h2>
+<a name="to-use" class="anchor" href="#to-use"><span class="octicon octicon-link"></span></a>To use:</h2>
+
+<p>The filter is called just like any other cups filter. Have a
+look at test.sh for example. </p>
+
+<h2>
+<a name="known-issues-1" class="anchor" href="#known-issues-1"><span class="octicon octicon-link"></span></a>Known Issues</h2>
+
+<ul>
+<li><p>Text extraction does not work (at least for pdftotext from xpdf)
+for the resulting pdfs.</p></li>
+<li><p>OTF(CFF) embedding currently does not subset the fonts.</p></li>
+<li><p>Text wrapping in pretty-printing mode does not respect double-wide
+characters (CJK), and thus produce wrong results (wrap too late)
+for lines where they occur.  The fix is not trivial, since all the
+pretty-printing processing is done without knowledge of / prior to
+the font configuration (which is where single or double width
+code-ranges are specified).</p></li>
+<li><p>The hebrew example in test5.pdf shows one of our limitations:
+Compose glyphs are not composed with the primary glyph but printed
+as separate glyphs.</p></li>
+</ul><h2>
+<a name="further-infos" class="anchor" href="#further-infos"><span class="octicon octicon-link"></span></a>Further Infos</h2>
+
+<p>Font embedding is handled by libfontembed in the filter/fontembed
+subdirectory.</p>
+
+<p>Please report all bugs to <a href="https://bugs.linuxfoundation.org/">https://bugs.linuxfoundation.org/</a>, product
+"OpenPrinting", component "cups-filters".</p>
+
+<p>PDFTORASTER</p>
+
+<ol>
+<li>INTRODUCTION</li>
+</ol><p>"pdftoraster" is a filter for CUPS. It reads PDF files, convert it and
+output CUPS raster.</p>
+
+<p>"pdftoraster" does not support functions that are not related to printing
+features, including interactive features and document interchange features.
+Many of these operators and sections are just ignored.
+Some of these may be output, but those functions are not assured.
+Encryption feature is not supported.</p>
+
+<ol>
+<li>LICENSE</li>
+</ol><p>Almost source files are under MIT like license. However, "pdftoraster" links
+some "poppler" libraries, and these files are under GNU public license.
+See copyright notice of each file for details.</p>
+
+<ol>
+<li>COMMAND LINE</li>
+</ol><p>"pdftoraster" is a CUPS filter, and the command line arguments, environment
+variables and configuration files are in accordance with the CUPS filter
+interface.</p>
+
+<p>pdftoraster  []</p>
+
+<p>"pdftoraster" ignores  and .
+ is appended into the PDF dictionary as /Title.
+ specifies the number of document copies.
+ is a CUPS option list.
+ is an input PDF file name.</p>
+
+<p>When omit the , "pdftoraster" reads a PDF file from the stdin,
+and save it as a temporary file.</p>
+
+<ol>
+<li>ENVIRONMENT VARIABLES</li>
+</ol><p>This program refers the following environment variable;
+   PPD:  PPD file name of the printer.</p>
+
+<ol>
+<li>COMMAND OPTIONS</li>
+</ol><p>See CUPS documents for details.</p>
+
+<ol>
+<li>INFORMATION FOR DEVELOPERS</li>
+</ol><p>Following information is for developers, not for driver users.</p>
+
+<p>6.1 Options handled by a printer or "pdftoraster"</p>
+
+<p>"pdftopdf" outputs the following special comments from the 4th line in the
+created PDF data.</p>
+
+<p>%%PDFTOPDFNumCopies :  ---  specified Number of Copies
+%%PDFTOPDFCollate :  ---  is true or false</p>
+
+<p>"pdftoraster" overrides the command line options by above two option's values.</p>
+
+<p>6.2 Temporally files location</p>
+
+<p>"pdftoraster" creates temporally files if needed. Temporary files are created
+in the location specified by TMPDIR environment variable. Default location
+is "/tmp".</p>
+
+<p>PDFTOIJS</p>
+
+<ol>
+<li>INTRODUCTION</li>
+</ol><p>"pdftoijs" is a filter for CUPS. It reads PDF files, converts it
+and sends it to an IJS server.</p>
+
+<ol>
+<li>LICENSE</li>
+</ol><p>Almost source files are under MIT like license. However, "pdftoijs" links
+some "poppler" libraries, and these files are under GNU public license.
+See copyright notice of each file for details.</p>
+
+<ol>
+<li>COMMAND LINE</li>
+</ol><p>"pdftoijs" is a CUPS filter, and the command line arguments, environment
+variables and configuration files are in accordance with the CUPS filter
+interface.</p>
+
+<p>pdftoijs  []</p>
+
+<p>"pdftoijs" ignores  and .
+ is appended into the PDF dictionary as /Title.
+ specifies the number of document copies.
+ is a CUPS option list.
+ is an input PDF file name.</p>
+
+<p>When omit the , "pdftoijs" reads a PDF file from the stdin,
+and save it as a temporary file.</p>
+
+<ol>
+<li>ENVIRONMENT VARIABLES</li>
+</ol><p>This program refers the following environment variable;
+   PPD:  PPD file name of the printer.</p>
+
+<ol>
+<li>NEW PPD KEYWORDS</li>
+</ol><p>*ijsServer : the ijsserver executable
+*ijsManufacturer, *ijsModel : as used by the ijs server
+*ijsColorspace : the desired output colorspace, one of
+                 'rgb'
+                 'cmyk' (availability depending on poppler compile-options)
+                 'white1', 'black1':  1-bit normal/inverted
+                 'white8', 'black8':  8-bit greyscale normal/inverted
+*ijsResolution [option]=[choice]: the desired output resolution e.g. "600 600"
+*ijsParams [option]=[choice]: custom ijs parameters, separated by ','
+                 (to escape: use \,)</p>
+
+<ol>
+<li>COMMAND OPTIONS</li>
+</ol><p>(See CUPS documents for details.)</p>
+
+<p>ijsOutputFile : the destination file, stdout otherwise</p>
+
+<ol>
+<li>INFORMATION FOR DEVELOPERS</li>
+</ol><p>Following information is for developers, not for driver users.</p>
+
+<p>7.1 Temporally files location</p>
+
+<p>"pdftoijs" creates temporally files if needed. Temporary files are created
+in the location specified by TMPDIR environment variable. Default location
+is "/tmp".</p>
+
+<p>PDFTOOPVP</p>
+
+<ol>
+<li>INTRODUCTION</li>
+</ol><p>"pdftoopvp" is a CUPS filter which reads PDF file, renders pages and
+outputs PDL to a printer driver which is compliant with the OpenPrinting
+Vector Printer Driver Interface "opvp".</p>
+
+<ol>
+<li>CONFIGURATION</li>
+</ol><p>"pdftoopvp" refers the poppler configuration file. Be aware that poppler
+uses "fontconfig" for its font configuration.</p>
+
+<ol>
+<li>JCL</li>
+</ol><p>When "pdftoopvp" reads a PDF file from stdin, "pdftoopvp" handles the data
+prior to PDF header (%PDF ...) as JCL options. JCL options for "pdftoopvp"
+must begin with "pdftoopvp jobInfo:". "pdftoopvp" passes the option string
+just after ":" to the driver as the jobInfo option.</p>
+
+<ol>
+<li>COMMAND LINE</li>
+</ol><p>"pdftoopvp" is a CUPS filter, and the command line arguments,
+environment variables and configuration files are in accordance with
+the CUPS filter interface.</p>
+
+<p>pdftoopvp  []</p>
+
+<p>"pdftoopvp" ignores , ,  and .
+ is a CUPS option list.</p>
+
+<p>When omit the , "pdftoopvp" reads a PDF file from stdin,
+and save it as a temporary file.</p>
+
+<p>CUPS options defined in  are delimited by space. Boolean
+type CUPS option is defined only by the option key, and other type
+CUPS option are defined by pairs of key and value, =.</p>
+
+<ol>
+<li>COMMAND OPTIONS</li>
+</ol><p>"pdftoopvp" accepts the following CUPS standard options;</p>
+
+<p>Resolution=
+  Specifies a printer resolution in dpi.
+  When this option is omitted, the resolution is treated as 300dpi.
+  Horizontal and vertical resolution are treated as the same resolution.</p>
+
+<p>PageSize=
+  Specifies a paper size by name defined in the PPD file.
+  This option is ignored when no PPD file is assigned for the printer
+  queue.</p>
+
+<p>"pdftoopvp" accepts the following original options;</p>
+
+<p>opvpDriver=
+  Specifies a driver library name.</p>
+
+<p>opvpModel=
+  Specifies a printer model name.</p>
+
+<p>opvpJobInfo=
+  Specifies "jobInfo" printing options that are passed to the driver.
+  Printing options are overridden by JCL options.</p>
+
+<p>opvpDocInfo=
+  Specifies "docInfo" document options that are passed to the driver.</p>
+
+<p>opvpPageInfo=
+  Specifies "pageInfo" page options that are passed to the driver.</p>
+
+<p>pdftoopvpClipPathNotSaved (Boolean option)
+  Specifies that the driver cannot save clipping path operators in PDF.</p>
+
+<p>nopdftoopvpShearImage (Boolean option)
+  Specifies that the driver cannot rotate/shear images by CTM.</p>
+
+<p>nopdftoopvpMiterLimit (Boolean option)
+  Specifies that the driver does not support miter limit.
+  If the driver does not prepare the opvpSetMiterLimit function entry,
+  this option setting is ignored, and also miter limit is ignored.</p>
+
+<p>pdftoopvpIgnoreMiterLimit (Boolean option)
+  When nopdftoopvpMiterLimit option is set, pdftoopvp automatically
+  replace paths to multiple lines or drawing images. This option
+  specifies to avoid the path replacement even when nopdftoopvpMiterLimit
+  option is set.</p>
+
+<p>pdftoopvpMaxClipPathLength=
+  Specifies the maximum number of clipping path points that the driver
+  supports. Default value is 2000 points.</p>
+
+<p>pdftoopvpMaxFillPathLength=
+  Specifies the maximum number of fill path points that the driver supports.
+  Default value is 4000 points.</p>
+
+<p>nopdftoopvpLineStyle (Boolean option)
+  Specifies that the driver ignores the line style settings in PDF.
+  If the driver does not prepare the SetLineStyle , SetLineDash or
+  SetLineDashOffset function entry, this option setting is ignored, and
+  also line style, line dash and line dash offset are ignored.</p>
+
+<p>nopdftoopvpClipPath (Boolean option)
+  Specifies that the driver does not support clipping path.
+  If the driver does not prepare the opvpSetClipPath function entry, this
+  option is ignored, and also clip path setting is ignored.</p>
+
+<p>nopdftoopvpBitmapChar (Boolean option)
+  Specifies that the driver does not output characters as images.
+  Default setting is that "pdftoopvp" outputs small characters as images.</p>
+
+<p>pdftoopvpBitmapCharThreshold=
+  Specifies the threshold value that "pdftoopvp" outputs characters as
+  images. Threshold value is defined as W x H where character's width
+  is given by W pixels and height is given by H pixels.
+  Default threshold value is 2000 points.</p>
+
+<p>nopdftoopvpImageMask (Boolean option)
+  Specifies that the driver does not support image mask.
+  If this option is set, "pdftoopvp" treats as the nopdftoopvpBitmapChar
+  option is given.</p>
+
+<ol>
+<li>PPD OPTIONS</li>
+</ol><p>Following options can be defined in a PPD.</p>
+
+<p>Resolution=
+PageSize=
+opvpDriver=
+opvpModel=
+opvpJobInfo=
+opvpDocInfo=
+opvpPageInfo=
+pdftoopvpClipPathNotSaved=True
+pdftoopvpShearImage=False
+pdftoopvpMiterLimit=False
+pdftoopvpIgnoreMiterLimit=True
+pdftoopvpMaxClipPathLength=
+pdftoopvpMaxFillPathLength=
+pdftoopvpLineStyle=False
+pdftoopvpClipPath=False
+pdftoopvpBitmapChar=False
+pdftoopvpBitmapCharThreshold=
+pdftoopvpImageMask=False</p>
+
+<ol>
+<li>OPTIONS OVERRIDING RULE</li>
+</ol><p>"jobInfo" printing options in a PPD is used as a initial "jobInfo" printing
+options. If opvpJobInfo option is given in the command line, precedent
+"jobInfo" printing options are overridden by the opvpJobInfo options.</p>
+
+<p>After the "jobInfo" printing options are overridden by the opvpJobInfo
+options, if JCL options are given, precedent "jobInfo" printing options are
+overridden by the options given by JCL options.</p>
+
+<ol>
+<li>INFORMATION FOR CUPS 1.1</li>
+</ol><p>To use this program under CUPS 1.1, following lines must be defined
+in the CUPS's "mime.types" file.</p>
+
+<p>application/vnd.cups-pdf</p>
+
+<ol>
+<li>KNOWN PROBLEMS</li>
+</ol><p>Problem:
+  When a page is rotated and a character is small, character might not be
+  rotated correctly. This problem is caused by free type library.
+Solution:
+  Define the nopdftoopvpBitmapChar to inhibit characters output as images.</p>
+
+<p>URFTOPDF</p>
+
+<p>"urftopdf" is a filter to convert Apple's proprietary URF raster
+format into PDF. URF raster is generated by some iOS applications when
+printing via Airprint, so this filter provides a more complete support
+for AirPrint clients. Note that it is not clear whether nowadays all
+iOS applications send PDF and not URF any more. Also the filter does
+not support all variants of URF format so the URF support is most
+probably incomplete.</p>
+
+<p>Apple does not provide any official documentation of the format but there is
+already some reverse engineering done. A description of the format as far as it
+got found out and two sample files can be found here:</p>
+
+<p><a href="https://github.com/AlanQuatermain/unirast">https://github.com/AlanQuatermain/unirast</a></p>
+
+<p>An actual implementation of an urftopdf filter is here:</p>
+
+<p><a href="https://github.com/superna9999/urftopdf">https://github.com/superna9999/urftopdf</a></p>
+
+<p>This original version uses libharu and to avoid an extra dependency
+the filter coming with this package is converted to use libqpdf
+instead (the same library as pdftopdf uses).</p>
+
+<p>License: GNU General Public License version 3 or any newer version</p>
+        </section>
+
+        <footer>
+          Cups-filters is maintained by <a href="https://github.com/Distrotech">Distrotech</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
